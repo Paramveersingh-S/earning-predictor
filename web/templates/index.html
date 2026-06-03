@@ -60,9 +60,20 @@
                     y: records.map(r => r.equity),
                     type: 'scatter',
                     mode: 'lines',
-                    line: {color: '#4FD1C5'}
+                    line: {color: '#4FD1C5', width: 2},
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(79, 209, 197, 0.1)'
                 };
-                Plotly.newPlot('equity-curve', [trace], {margin: {t: 20}});
+                const layout = {
+                    margin: {t: 20, l: 40, r: 20, b: 40},
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    font: { color: '#e2e8f0', family: 'Inter' },
+                    xaxis: { gridcolor: 'rgba(255,255,255,0.05)', linecolor: 'rgba(255,255,255,0.1)' },
+                    yaxis: { gridcolor: 'rgba(255,255,255,0.05)', linecolor: 'rgba(255,255,255,0.1)' },
+                    height: 350
+                };
+                Plotly.newPlot('equity-curve', [trace], layout, {responsive: true});
             });
         // Prediction request
         document.getElementById('predictBtn').addEventListener('click', () => {
