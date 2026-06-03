@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Earnings Surprise Predictor Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <!-- Plotly for interactive charts -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Earnings Surprise Predictor</h1>
+        <section class="summary-card card">
+            <h2>Model Summary</h2>
+            <div id="summary" class="grid"></div>
+        </section>
+        <section class="charts card">
+            <h2>Back‑test Equity Curve</h2>
+            <div id="equity-curve"></div>
+        </section>
+        <section class="predictions card">
+            <h2>Live Predictions</h2>
+            <div class="input-group">
+                <input type="text" id="ticker" placeholder="Enter ticker (e.g., AAPL)" />
+                <button id="predictBtn">Predict</button>
+            </div>
+            <div id="prediction-result"></div>
+        </section>
+        <section class="shap card">
+            <h2>Model Explainability</h2>
+            <div class="shap-images">
+                <img id="shap-summary" src="{{ url_for('static', filename='shap/shap_summary.png') }}" alt="SHAP Summary" />
+                <img id="shap-waterfall" src="{{ url_for('static', filename='shap/shap_waterfall_0.png') }}" alt="SHAP Waterfall" />
+            </div>
+        </section>
+    </div>
+    <script>
+        // Fetch and render model summary
+        fetch('/api/summary')
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('summary');
+                Object.entries(data).forEach(([k, v]) => {
+                    const div = document.createElement('div');
+                    div.className = 'metric';
+                    div.innerHTML = `<strong>${k.replace('_', ' ')}</strong>: ${v ?? 'N/A'}`;
+                    container.appendChild(div);
+                });
+            });
+        // Fetch and render equity curve using Plotly
+        fetch('/api/backtest')
+            .then(r => r.json())
+            .then(records => {
+                if (records.length === 0) return;
+                const trace = {
+                    x: records.map(r => r.date),
+                    y: records.map(r => r.equity),
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: {color: '#4FD1C5'}
+                };
+                Plotly.newPlot('equity-curve', [trace], {margin: {t: 20}});
+            });
+        // Prediction request
+        document.getElementById('predictBtn').addEventListener('click', () => {
+            const ticker = document.getElementById('ticker').value.trim();
+            if (!ticker) return;
+            fetch('/api/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ticker})
+            })
+                .then(r => r.json())
+                .then(res => {
+                    const out = document.getElementById('prediction-result');
+                    out.innerHTML = `<p><strong>${res.ticker}</strong>: ${res.prediction} (probability ${res.probability.toFixed(2)})</p>`;
+                });
+        });
+    </script>
+</body>
+</html>
